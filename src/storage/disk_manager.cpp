@@ -1,7 +1,9 @@
 #include "storage/disk_manager.h"
 
+#include <page/page.h>
 #include <sys/stat.h>
 
+#include <cmath>
 #include <filesystem>
 #include <stdexcept>
 
@@ -47,32 +49,72 @@ void DiskManager::WritePage(page_id_t logical_page_id, const char *page_data) {
   WritePhysicalPage(MapPageId(logical_page_id), page_data);
 }
 
-/**
- * TODO: Student Implement
- */
 page_id_t DiskManager::AllocatePage() {
-  ASSERT(false, "Not implemented yet.");
+  uint32_t id;
+  DiskFileMetaPage *meta_page = reinterpret_cast<DiskFileMetaPage *>(this->GetMetaData());
+  if (meta_page->GetAllocatedPages() == MAX_VALID_PAGE_ID) return INVALID_PAGE_ID;  // 不能超限
+  for (page_id_t i = 0; i < meta_page->GetExtentNums(); i++)  // 先从已有分区中查找是否可以分配
+  {
+    if (meta_page->GetExtentUsedPage(i) == BITMAP_SIZE) continue;  // 该分区已满
+    char buf[PAGE_SIZE];
+    ReadPhysicalPage(i * (BITMAP_SIZE + 1) + 1, buf);  // 把对应分区的bitmap读取出来
+    BitmapPage<PAGE_SIZE> *bitmap = reinterpret_cast<BitmapPage<PAGE_SIZE> *>(buf);
+    if (bitmap->AllocatePage(id) == true) {
+      meta_page->extent_used_page_[i]++;
+      meta_page->num_allocated_pages_++;
+      WritePhysicalPage(META_PAGE_ID, this->GetMetaData());  // 重新写回meta_page对应的物理页
+      WritePhysicalPage(i * (BITMAP_SIZE + 1) + 1, buf);     // 修改后重新写回bitmap对应物理页中
+      return page_id_t(i * BITMAP_SIZE + id);
+    }
+  }
+  // 前面所有分区已满，开一个新的分区
+  char buf[PAGE_SIZE];
+  memset(buf, 0, PAGE_SIZE);
+  BitmapPage<PAGE_SIZE> *bitmap = reinterpret_cast<BitmapPage<PAGE_SIZE> *>(buf);
+  if (bitmap->AllocatePage(id) == true) {
+    meta_page->num_extents_++;
+    uint32_t i = meta_page->num_extents_ - 1;  // 现在的分区编号
+    meta_page->extent_used_page_[i]++;
+    meta_page->num_allocated_pages_++;
+    WritePhysicalPage(META_PAGE_ID, this->GetMetaData());  // 重新写回meta_page对应的物理页
+    WritePhysicalPage(i * (BITMAP_SIZE + 1) + 1, buf);     // 修改后重新写回bitmap对应物理页中
+    return page_id_t(i * BITMAP_SIZE + id);
+  }
   return INVALID_PAGE_ID;
 }
 
-/**
- * TODO: Student Implement
- */
 void DiskManager::DeAllocatePage(page_id_t logical_page_id) {
-  ASSERT(false, "Not implemented yet.");
+  if (logical_page_id >= MAX_VALID_PAGE_ID)  // 逻辑页号不合法
+    return;
+  DiskFileMetaPage *meta_page = reinterpret_cast<DiskFileMetaPage *>(this->GetMetaData());
+  uint32_t extend_index = logical_page_id / BITMAP_SIZE;  // 获取对应分区
+  uint32_t page_offset = logical_page_id % BITMAP_SIZE;   // 获取该逻辑页在当前分区的页偏移
+  char buf[PAGE_SIZE];
+  ReadPhysicalPage(extend_index * (BITMAP_SIZE + 1) + 1, buf);  // 把对应分区的bitmap读取出来
+  BitmapPage<PAGE_SIZE> *bitmap = reinterpret_cast<BitmapPage<PAGE_SIZE> *>(buf);
+  if (bitmap->DeAllocatePage(page_offset) == true) {
+    meta_page->num_allocated_pages_--;
+    meta_page->extent_used_page_[extend_index]--;
+    WritePhysicalPage(META_PAGE_ID, this->GetMetaData());  // 更新disk头
+    WritePhysicalPage(extend_index * (BITMAP_SIZE + 1) + 1, buf);
+  }
 }
 
-/**
- * TODO: Student Implement
- */
 bool DiskManager::IsPageFree(page_id_t logical_page_id) {
-  return false;
+  if (logical_page_id >= MAX_VALID_PAGE_ID)  // 逻辑页号不合法
+    return false;
+  uint32_t extend_index = logical_page_id / BITMAP_SIZE;  // 获取对应分区
+  uint32_t page_offset = logical_page_id % BITMAP_SIZE;   // 获取该逻辑页在当前分区的页偏移
+  char buf[PAGE_SIZE];
+  ReadPhysicalPage(extend_index * (BITMAP_SIZE + 1) + 1, buf);  // 把对应分区的bitmap读取出来
+  BitmapPage<PAGE_SIZE> *bitmap = reinterpret_cast<BitmapPage<PAGE_SIZE> *>(buf);
+  return bitmap->IsPageFree(page_offset);
 }
 
-/**
- * TODO: Student Implement
- */
 page_id_t DiskManager::MapPageId(page_id_t logical_page_id) {
+  // logical_page_id : 0~N-1, N~2N-1...
+  // physical_page_id : 0 [1 2~N+1] [N+2 N+3~...]...
+  return logical_page_id / BITMAP_SIZE + 2 + logical_page_id;
   return 0;
 }
 

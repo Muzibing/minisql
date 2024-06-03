@@ -1,12 +1,15 @@
 #include "buffer/buffer_pool_manager.h"
 
 #include <cstdio>
+#include <iostream>
 #include <random>
 #include <string>
 
 #include "gtest/gtest.h"
 
+#include "glog/logging.h"
 TEST(BufferPoolManagerTest, BinaryDataTest) {
+  std::cerr << "0:okkkk" << std::endl;
   const std::string db_name = "bpm_test.db";
   const size_t buffer_pool_size = 10;
 
@@ -16,6 +19,7 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
 
   remove(db_name.c_str());
   auto *disk_manager = new DiskManager(db_name);
+  std::cerr << "1:okkkk" << std::endl;
   auto *bpm = new BufferPoolManager(buffer_pool_size, disk_manager);
 
   page_id_t page_id_temp;
@@ -68,7 +72,7 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
   // Shutdown the disk manager and remove the temporary file we created.
   disk_manager->Close();
   remove(db_name.c_str());
-
+  // LOG(INFO) << "close" << std::endl;
   delete bpm;
   delete disk_manager;
 }

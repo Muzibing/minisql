@@ -35,6 +35,8 @@ class Replacer {
 
   /** @return the number of elements in the replacer that can be victimized */
   virtual size_t Size() = 0;
+
+  virtual void Reset(frame_id_t frame_id) = 0;
 };
 
 #endif  // MINISQL_REPLACER_H

@@ -1,6 +1,7 @@
 #ifndef MINISQL_LRU_REPLACER_H
 #define MINISQL_LRU_REPLACER_H
 
+#include <cstdint>
 #include <list>
 #include <mutex>
 #include <unordered_set>
@@ -35,8 +36,14 @@ class LRUReplacer : public Replacer {
 
   size_t Size() override;
 
-private:
+  void Reset(frame_id_t frame_id);
+
+ private:
   // add your own private member variables here
+  vector<int32_t> frame_used;   // 记录缓冲区每一页帧的访问次数
+  vector<bool> frame_isPin;     // 记录缓冲区每一页是否被pin
+  size_t number_unpined_frame;  // 记录缓冲区有多少页可以替换
+  size_t replacer_size;         // 缓冲区最大容量
 };
 
 #endif  // MINISQL_LRU_REPLACER_H
