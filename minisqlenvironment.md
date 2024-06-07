@@ -27,9 +27,16 @@ part5：测试
     进入build文件夹，```make lru_replacer_test```，还是如果没权限就开sudo
     还是build目录下，```./test/lru_replacer_test```就可以测试~
 
+怎么把zjugit的代码弄到github自己的仓库里
+https://blog.csdn.net/m0_55546349/article/details/121786789
+如何提交本地的更改到那个仓库
+git add .
+git commit -m "commit message" commit message就是批注
+git push origin main
+
 此外：安装clangd可以避免全是红色9+的错误 方便调试和看着舒心
 步骤如下：
-https://blog.csdn.net/qq_42764906/article/details/135541847
+https://zhuanlan.zhihu.com/p/592802373
 
 完成：
     4.26    开始尝试#1 1.2 disk_manager_test bitmap_page.cpp
@@ -42,3 +49,5 @@ https://blog.csdn.net/qq_42764906/article/details/135541847
     6.3     #1 disk_manager_test 测试点2通过 是之前环境的问题 在mnt目录下重新配了下 之前是直接wsl的目录下
                发现过程：使用cerr对不通过的测试点进行排查 发现是"xx.db"那句话的导入出了问题 在网上复制了正确同学的代码 还是这个地方有问题 观看同学正确的环境 发现有区别 于是开始尝试新环境
             差 #1 buffer_pool_manager_test和#2 table_heap_test
+    6.4     #1 buffer_pool_manager测试点通过 #2 table_heap_test测试点通过
+    6.6     #3 b_plus_tree_index_test测试点和index_iterator_test测试点通过 b_plus_tree_test查询那一块有问题

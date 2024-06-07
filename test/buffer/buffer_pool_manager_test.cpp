@@ -9,7 +9,7 @@
 
 #include "glog/logging.h"
 TEST(BufferPoolManagerTest, BinaryDataTest) {
-  std::cerr << "0:okkkk" << std::endl;
+  //std::cerr << "0:okkkk" << std::endl;
   const std::string db_name = "bpm_test.db";
   const size_t buffer_pool_size = 10;
 
@@ -19,11 +19,11 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
 
   remove(db_name.c_str());
   auto *disk_manager = new DiskManager(db_name);
-  std::cerr << "1:okkkk" << std::endl;
   auto *bpm = new BufferPoolManager(buffer_pool_size, disk_manager);
 
   page_id_t page_id_temp;
   auto *page0 = bpm->NewPage(page_id_temp);
+  //std::cerr << "1:okkkk" << std::endl;
 
   // Scenario: The buffer pool is empty. We should be able to create a new page.
   ASSERT_NE(nullptr, page0);
@@ -69,9 +69,11 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
   EXPECT_EQ(0, memcmp(page0->GetData(), random_binary_data, PAGE_SIZE));
   EXPECT_EQ(true, bpm->UnpinPage(0, true));
 
+  //std::cerr<<"2:okkkk"<<std::endl;
   // Shutdown the disk manager and remove the temporary file we created.
   disk_manager->Close();
   remove(db_name.c_str());
+  //std::cerr<<"3:okkkk"<<std::endl;
   // LOG(INFO) << "close" << std::endl;
   delete bpm;
   delete disk_manager;

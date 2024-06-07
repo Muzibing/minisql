@@ -4,13 +4,14 @@
 
 template <size_t PageSize>
 bool BitmapPage<PageSize>::AllocatePage(uint32_t &page_offset) {
+  // page_offset就是当前空闲页
   if (page_allocated_ == 8 * MAX_CHARS) {
     // LOG(WARNING) << "there is no page available" <<std::endl;
     return false;
   }
   bytes[next_free_page_ >> 3] |= (0x80 >> (next_free_page_ & 0x07));
   // 置位操作：左边是字节 右边是算位数 eg：比如将第1234个位置1 ，字节序：1234 >> 3 = 154; 位序：0x80 >> (1234 & 0x07) =
-  // 2 ，那么 1234 放在 M 的下标 154 字节处，把该字节的 2 号位（ 0~7）置为 1
+  // 2 ，那么 1234 放在 M 的下标 154 字节处，把该字节的 2 号位（0~7）置为 1
   page_allocated_++;
   page_offset = next_free_page_;
   next_free_page_ = 8 * MAX_CHARS;

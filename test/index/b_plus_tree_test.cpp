@@ -6,10 +6,13 @@
 #include "utils/tree_file_mgr.h"
 #include "utils/utils.h"
 
+// #include "common/logger.h"
+
 static const std::string db_name = "bp_tree_insert_test.db";
 
 TEST(BPlusTreeTests, SampleTest) {
   // Init engine
+  std::cerr << "start b_plus_tree_test" << std::endl;
   DBStorageEngine engine(db_name);
   std::vector<Column *> columns = {
       new Column("int", TypeId::kTypeInt, 0, false, false),
@@ -32,11 +35,13 @@ TEST(BPlusTreeTests, SampleTest) {
     values.push_back(RowId(i));
     delete_seq.push_back(key);
   }
+  std::cerr << "generate ok" << std::endl;
   vector<GenericKey *> keys_copy(keys);
   // Shuffle data
   ShuffleArray(keys);
   ShuffleArray(values);
   ShuffleArray(delete_seq);
+  std::cerr << "shuffle ok" << std::endl;
   // Map key value
   for (int i = 0; i < n; i++) {
     kv_map[keys[i]] = values[i];
@@ -46,15 +51,18 @@ TEST(BPlusTreeTests, SampleTest) {
     tree.Insert(keys[i], values[i]);
   }
   ASSERT_TRUE(tree.Check());
+  std::cerr << "insert ok" << std::endl;
   // Print tree
   tree.PrintTree(mgr[0], table_schema);
+  std::cerr << "print ok" << std::endl;
   // Search keys
-  vector<RowId> ans;
+  vector<RowId> ans;  // Here comes ERROR
   for (int i = 0; i < n; i++) {
     tree.GetValue(keys_copy[i], ans);
     ASSERT_EQ(kv_map[keys_copy[i]], ans[i]);
   }
   ASSERT_TRUE(tree.Check());
+  std::cerr << "search key ok" << std::endl;
   // Delete half keys
   for (int i = 0; i < n / 2; i++) {
     tree.Remove(delete_seq[i]);

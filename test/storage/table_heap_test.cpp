@@ -35,7 +35,7 @@ TEST(TableHeapTest, TableHeapSampleTest) {
         new Fields{Field(TypeId::kTypeInt, i), Field(TypeId::kTypeChar, const_cast<char *>(characters), len, true),
                    Field(TypeId::kTypeFloat, RandomUtils::RandomFloat(-999.f, 999.f))};
     Row row(*fields);
-    ASSERT_TRUE(table_heap->InsertTuple(row, nullptr));
+    ASSERT_TRUE(table_heap->InsertTuple(row, nullptr)); //一开始返回0
     if (row_values.find(row.GetRowId().Get()) != row_values.end()) {
       std::cout << row.GetRowId().Get() << std::endl;
       ASSERT_TRUE(false);

@@ -77,40 +77,40 @@ Page *BufferPoolManager::FetchPage(page_id_t page_id) {
  * TODO: Student Implement
  */
 Page *BufferPoolManager::NewPage(page_id_t &page_id) {
-  if (!free_list_.empty())  // 缓冲区有空闲页
+  if(!free_list_.empty()) // 内存中有空页
   {
-    frame_id_t frame_id = free_list_.front();  // 获取第一个空页
-    free_list_.erase(free_list_.begin());      // 开删
-    page_id = AllocatePage();                  // 从磁盘中读取一个空页（逻辑号）
-    if (page_id == INVALID_PAGE_ID) return nullptr;
-
-    pages_[frame_id].ResetMemory();  // 更新page的信息，注意空页固定不能解除
-    pages_[frame_id].page_id_ = page_id;
+    frame_id_t frame_id = free_list_.front(); // 获取第一个空页的页帧
+    free_list_.erase(free_list_.begin()); // 从空页链表中擦除第一个空页
+    page_id = AllocatePage(); //从磁盘中获取一个空的页(逻辑号)
+    if(page_id == INVALID_PAGE_ID) // 磁盘没有空的页返回
+      return nullptr;
+    // 更新Page的信息,注意此时不能解除空页固定，空页相当于被Pin住了(空页不能被替换)
+    pages_[frame_id].page_id_ = page_id; // 修改信息
     pages_[frame_id].is_dirty_ = false;
     pages_[frame_id].pin_count_ = 0;
-    page_table_.insert({page_id, frame_id});
-    return &pages_[frame_id];
-  } else {
-    // 没有空闲页
-    frame_id_t frame_id;
-    replacer_->Victim(&frame_id);  // 根据replacer策略获得一个替换的页R
-    if (frame_id == INVALID_FRAME_ID) return nullptr;
-    page_id = AllocatePage();
-    if (page_id == INVALID_PAGE_ID) return nullptr;
-    page_id_t replace_page_id = pages_[frame_id].GetPageId();
-    if (pages_[frame_id].IsDirty()) {
-      disk_manager_->WritePage(replace_page_id, pages_[frame_id].GetData());
-    }
-    auto iter = page_table_.find(replace_page_id);
-    page_table_.erase(iter);
-    pages_[frame_id].page_id_ == page_id;
-    pages_[frame_id].is_dirty_ = false;
-    pages_[frame_id].pin_count_ = 0;
-    pages_[frame_id].ResetMemory();
-    page_table_.insert({page_id, frame_id});
+    pages_[frame_id].ResetMemory(); // 清空Page
+    page_table_.insert({page_id, frame_id}); // 向page table中插入对应关系
     return &pages_[frame_id];
   }
-  return nullptr;
+  // 内存中没有空页
+  frame_id_t frame_id;
+  replacer_->Victim(&frame_id);  // 根据replacer策略获得一个替换的页R
+  if(frame_id == INVALID_FRAME_ID) // 如果所有页都被Pin了，返回nullpter
+    return nullptr;
+  page_id = AllocatePage(); //从磁盘中获取一个空的页(逻辑号)
+  if(page_id == INVALID_PAGE_ID) // 磁盘没有空的页返回
+    return nullptr;
+  page_id_t replace_page_id = pages_[frame_id].GetPageId(); // 获取替换页对应的逻辑页号
+  if(pages_[frame_id].IsDirty())  // 替换页是脏的，需要重新写回磁盘
+    disk_manager_->WritePage(replace_page_id, pages_[frame_id].GetData());
+  auto iter = page_table_.find(replace_page_id); // 从page_table_中删除替换页的映射关系
+  page_table_.erase(iter);
+  pages_[frame_id].page_id_ = page_id; // 修改信息
+  pages_[frame_id].is_dirty_ = false;
+  pages_[frame_id].pin_count_ = 0;
+  pages_[frame_id].ResetMemory();
+  page_table_.insert({page_id, frame_id}); // 向page table中插入对应关系
+  return &pages_[frame_id];
 }
 
 /**
@@ -135,17 +135,26 @@ bool BufferPoolManager::DeletePage(page_id_t page_id) {
     DeallocatePage(page_id);  // 从磁盘中释放该页
     return true;
   }
-  return false;
+  else{
+    DeallocatePage(page_id);
+    return true;
+  }
 }
 
 /**
  * TODO: Student Implement
  */
 bool BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty) {
+  if(page_table_.find(page_id) == page_table_.end())
+    return false;
   frame_id_t frame_id = page_table_[page_id];
-  replacer_->Unpin(frame_id);
   pages_[frame_id].is_dirty_ = is_dirty;
+  if(pages_[frame_id].pin_count_ > 0)
+    pages_[frame_id].pin_count_ --;
+  if(pages_[frame_id].pin_count_ == 0)
+    replacer_->Unpin(frame_id);
   return true;
+
 }
 
 /**
@@ -175,7 +184,7 @@ bool BufferPoolManager::CheckAllUnpinned() {
   for (size_t i = 0; i < pool_size_; i++) {
     if (pages_[i].pin_count_ != 0) {
       res = false;
-      LOG(ERROR) << "page " << pages_[i].page_id_ << " pin count:" << pages_[i].pin_count_ << endl;
+      std::cerr << "page " << pages_[i].page_id_ << " pin count:" << pages_[i].pin_count_ << std::endl;
     }
   }
   return res;
