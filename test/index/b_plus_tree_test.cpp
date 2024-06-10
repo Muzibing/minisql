@@ -3,6 +3,7 @@
 #include "common/instance.h"
 #include "gtest/gtest.h"
 #include "index/comparator.h"
+#include "page/page.h"
 #include "utils/tree_file_mgr.h"
 #include "utils/utils.h"
 
@@ -58,6 +59,7 @@ TEST(BPlusTreeTests, SampleTest) {
   // Search keys
   vector<RowId> ans;  // Here comes ERROR
   for (int i = 0; i < n; i++) {
+    std::cerr << i << std::endl;
     tree.GetValue(keys_copy[i], ans);
     ASSERT_EQ(kv_map[keys_copy[i]], ans[i]);
   }

@@ -131,7 +131,7 @@ class TableHeap {
 
  private:
   BufferPoolManager *buffer_pool_manager_;
-  page_id_t first_page_id_;
+  page_id_t first_page_id_{INVALID_PAGE_ID};
   page_id_t last_page_id_;
   uint32_t page_num{0};
   Schema *schema_;

@@ -6,6 +6,8 @@
 #include <map>
 #include <mutex>
 #include <queue>
+#include <shared_mutex>
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -38,10 +40,12 @@ class CLOCKReplacer : public Replacer {
 
   size_t Size() override;
 
+  void Reset(frame_id_t frame_id) override;
+
  private:
-  size_t capacity;
-  list<frame_id_t> clock_list;               // replacer中可以被替换的数据页
-  map<frame_id_t, frame_id_t> clock_status;  // 数据页的存储状态
+  frame_id_t clock_hand_ = 0;
+  std::vector<std::tuple<bool, bool>> frames_;
+  std::shared_mutex mutex_;
 };
 
 #endif  // MINISQL_CLOCK_REPLACER_H

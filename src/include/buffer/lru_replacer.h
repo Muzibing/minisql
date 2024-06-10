@@ -36,7 +36,7 @@ class LRUReplacer : public Replacer {
 
   size_t Size() override;
 
-  void Reset(frame_id_t frame_id);
+  void Reset(frame_id_t frame_id) override;
 
  private:
   // add your own private member variables here

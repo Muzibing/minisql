@@ -1,4 +1,5 @@
 #include "catalog/indexes.h"
+#include <cstdint>
 
 IndexMetadata::IndexMetadata(const index_id_t index_id, const std::string &index_name, const table_id_t table_id,
                              const std::vector<uint32_t> &key_map)
@@ -43,7 +44,8 @@ uint32_t IndexMetadata::SerializeTo(char *buf) const {
  * TODO: Student Implement
  */
 uint32_t IndexMetadata::GetSerializedSize() const {
-  return 0;
+  uint32_t size = index_name_.size() + 4 * key_map_.size() + 4 * 5;
+  return size;
 }
 
 uint32_t IndexMetadata::DeserializeFrom(char *buf, IndexMetadata *&index_meta) {

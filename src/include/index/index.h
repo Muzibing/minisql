@@ -17,7 +17,7 @@ class Index {
 
   virtual dberr_t RemoveEntry(const Row &key, RowId row_id, Txn *txn) = 0;
 
-  virtual dberr_t ScanKey(const Row &key, std::vector<RowId> &result, Txn *txn, string compare_operator = "=") = 0;
+  virtual dberr_t ScanKey(const Row &key, std::vector<RowId> &result, Txn *txn, std::string compare_operator = "=") = 0;
 
   virtual dberr_t Destroy() = 0;
 

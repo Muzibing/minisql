@@ -52,34 +52,35 @@ bool TableHeap::InsertTuple(Row &row, Txn *txn) {
         if (first_page->InsertTuple(row, schema_, txn, lock_manager_, log_manager_)) {  // 尝试将row插入当前页
           return buffer_pool_manager_->UnpinPage(page_id, true);
         } else {  // 失败则获取下一页
-        auto next_page_id = first_page->GetNextPageId();
-        if (next_page_id == INVALID_PAGE_ID) {  // 若下一页无效则新建下一页      
-          auto new_page = reinterpret_cast<TablePage *>(buffer_pool_manager_->NewPage(next_page_id));
-          if (new_page == nullptr || next_page_id == INVALID_PAGE_ID)  // 若新建失败，则返回false
-          {
+          auto next_page_id = first_page->GetNextPageId();
+          if (next_page_id == INVALID_PAGE_ID) {  // 若下一页无效则新建下一页
+            auto new_page = reinterpret_cast<TablePage *>(buffer_pool_manager_->NewPage(next_page_id));
+            if (new_page == nullptr || next_page_id == INVALID_PAGE_ID)  // 若新建失败，则返回false
+            {
+              buffer_pool_manager_->UnpinPage(page_id, false);
+              return false;
+            } else {  // 若创建成功
+              page_num++;
+              last_page_id_ = next_page_id;                              // 更新尾页
+              new_page->Init(next_page_id, page_id, log_manager_, txn);  // 并初始化新页
+              first_page->SetNextPageId(next_page_id);                   // 将其设置为上一页的下一页
+              buffer_pool_manager_->UnpinPage(page_id, false);           // 解引用
+              first_page = new_page;                                     // 更新page
+              page_id = next_page_id;                                    // 更新page_id
+            }
+          } else {
+            // 若下一页有效，获得下一页并作为当前页，继续循环
             buffer_pool_manager_->UnpinPage(page_id, false);
-            return false;
-          } else {  // 若创建成功
-            page_num++;
-            last_page_id_ = next_page_id;                              // 更新尾页
-            new_page->Init(next_page_id, page_id, log_manager_, txn);  // 并初始化新页
-            first_page->SetNextPageId(next_page_id);                   // 将其设置为上一页的下一页
-            buffer_pool_manager_->UnpinPage(page_id, false);           // 解引用
-            first_page = new_page;                                     // 更新page
-            page_id = next_page_id;                                    // 更新page_id
+            page_id = next_page_id;
+            first_page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(next_page_id));
           }
-        } else {
-          // 若下一页有效，获得下一页并作为当前页，继续循环
-          buffer_pool_manager_->UnpinPage(page_id, false);
-          page_id = next_page_id;
-          first_page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(next_page_id));          }
+        }
       }
+      return false;
+    } else {
+      buffer_pool_manager_->UnpinPage(first_page_id_, false);
+      return false;
     }
-    return false;
-  } else {
-    buffer_pool_manager_->UnpinPage(first_page_id_, false);
-    return false;
-  }
   }
 }
 

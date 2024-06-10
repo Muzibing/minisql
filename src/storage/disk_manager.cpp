@@ -115,7 +115,6 @@ page_id_t DiskManager::MapPageId(page_id_t logical_page_id) {
   // logical_page_id : 0~N-1, N~2N-1...
   // physical_page_id : 0 [1 2~N+1] [N+2 N+3~...]...
   return logical_page_id / BITMAP_SIZE + 2 + logical_page_id;
-  return 0;
 }
 
 int DiskManager::GetFileSize(const std::string &file_name) {

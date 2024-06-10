@@ -53,8 +53,8 @@ uint32_t Column::SerializeTo(char *buf) const {
   size += name_.length();
   MACH_WRITE_TO(TypeId, buf + size, this->type_);  // 将字段类型写入buf
   size += sizeof type_;
-  if (this->type_ == kTypeChar) {  // 如果是char类型需要写入buf
-    MACH_WRITE_TO(uint32_t, buf + size, this->len_);
+  if (this->type_ == kTypeChar) {                     // 如果是char类型需要写入buf
+    MACH_WRITE_TO(uint32_t, buf + size, this->len_);  // 字符类型考虑字符长度
     size += sizeof len_;
   }
   MACH_WRITE_TO(uint32_t, buf + size, this->table_ind_);  // 将字段在表中的索引写入buf
@@ -74,7 +74,7 @@ uint32_t Column::GetSerializedSize() const {
   if (type_ == kTypeChar) {
     i = sizeof len_;
   }
-  return name_.length() + sizeof(size_t) + sizeof type_ + sizeof nullable_ + sizeof unique_ + i;
+  return name_.length() + sizeof(size_t) + sizeof type_ + sizeof table_ind_ + sizeof nullable_ + sizeof unique_ + i;
 }
 
 /**
@@ -112,7 +112,7 @@ uint32_t Column::DeserializeFrom(char *buf, Column *&column) {
   } else {
     column = new Column(name, type, table_ind, nullable, unique);
   }
-  if (column == nullptr) {
+  if (column == nullptr) {  // 判断创建column失败否
     return 0;
   } else
     return size;  // 返回向后反序列化移动的字节
