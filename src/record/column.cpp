@@ -84,11 +84,10 @@ uint32_t Column::DeserializeFrom(char *buf, Column *&column) {
   if (column != nullptr) {  // 若column不是空，则不做任何操作
     return 0;
   }
-  size_t name_size;
   uint32_t size = 0, len;
   std::string name = "";
   char c;
-  name_size = MACH_READ_FROM(size_t, buf + size);  // namesize存储buf中字段名的长度
+  size_t name_size = MACH_READ_FROM(size_t, buf + size);  // namesize存储buf中字段名的长度
   size += sizeof name_size;
   for (size_t i = 0; i < name_size; i++) {  // name存储后面的字段名
     c = MACH_READ_FROM(char, buf + size + i * sizeof(char));

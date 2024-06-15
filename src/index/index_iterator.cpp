@@ -11,8 +11,7 @@ IndexIterator::IndexIterator(page_id_t page_id, BufferPoolManager *bpm, int inde
 }
 
 IndexIterator::~IndexIterator() {
-  if (current_page_id != INVALID_PAGE_ID)
-    buffer_pool_manager->UnpinPage(current_page_id, false);
+  if (current_page_id != INVALID_PAGE_ID) buffer_pool_manager->UnpinPage(current_page_id, false);
 }
 
 std::pair<GenericKey *, RowId> IndexIterator::operator*() {
@@ -22,15 +21,15 @@ std::pair<GenericKey *, RowId> IndexIterator::operator*() {
 
 IndexIterator &IndexIterator::operator++() {
   item_index++;
-  if(item_index == (page->GetSize()) && page->GetNextPageId() != INVALID_PAGE_ID) {
+  if (item_index == (page->GetSize()) && page->GetNextPageId() != INVALID_PAGE_ID) {  // 未到达本页的末尾
     current_page_id = page->GetNextPageId();
-    auto *next_page = reinterpret_cast<::LeafPage *>
-        (buffer_pool_manager->FetchPage(current_page_id)->GetData());
+    auto *next_page = reinterpret_cast<::LeafPage *>(
+        buffer_pool_manager->FetchPage(current_page_id)->GetData());  // 从缓存池获取下一页
     buffer_pool_manager->UnpinPage(page->GetPageId(), false);
-    page = next_page;
+    page = next_page;  // 更新当前页为下一页
     item_index = 0;
-  } 
-  if(item_index == (page->GetSize())) {
+  }
+  if (item_index == (page->GetSize())) {  // 重置迭代器为初始状态
     buffer_pool_manager->UnpinPage(current_page_id, false);
     current_page_id = INVALID_PAGE_ID;
     page = nullptr;
@@ -44,6 +43,4 @@ bool IndexIterator::operator==(const IndexIterator &itr) const {
   return current_page_id == itr.current_page_id && item_index == itr.item_index;
 }
 
-bool IndexIterator::operator!=(const IndexIterator &itr) const {
-  return !(*this == itr);
-}
+bool IndexIterator::operator!=(const IndexIterator &itr) const { return !(*this == itr); }

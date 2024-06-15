@@ -51,3 +51,6 @@ https://zhuanlan.zhihu.com/p/592802373
             差 #1 buffer_pool_manager_test和#2 table_heap_test
     6.4     #1 buffer_pool_manager测试点通过 #2 table_heap_test测试点通过
     6.6     #3 b_plus_tree_index_test测试点和index_iterator_test测试点通过 b_plus_tree_test查询那一块有问题
+    6.10    #3 b_plus_tree_test测试点通过 #4 catalog_test通过 前四部分全部过完
+    6.13    #5 executor_test过掉 但是手动insert插入表格会有问题 很奇怪
+    6.15    #5 executor_test又过不掉了

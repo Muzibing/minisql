@@ -1,6 +1,10 @@
 #include "record/row.h"
 #include <cstdint>
 
+/**
+ * TODO: Student Implement
+ */
+
 uint32_t Row::SerializeTo(char *buf, Schema *schema) const {
   ASSERT(schema != nullptr, "Invalid schema before serialize.");
   ASSERT(schema->GetColumnCount() == fields_.size(), "Fields size do not match schema's column size.");
@@ -21,11 +25,9 @@ uint32_t Row::SerializeTo(char *buf, Schema *schema) const {
   size += sizeof(uint32_t);
   memcpy(buf + size, bitmap, bitmap_size);  // 再将位图序列化进去
   size += bitmap_size;
-
   for (auto temp : fields_) {  // 将每个field都序列化进去
     size += temp->SerializeTo(buf + size);
   }
-
   return size;
 }
 

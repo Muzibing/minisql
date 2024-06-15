@@ -110,8 +110,8 @@ std::pair<GenericKey *, RowId> LeafPage::GetItem(int index) { return {KeyAt(inde
  * @return page size after insertion
  */
 int LeafPage::Insert(GenericKey *key, const RowId &value, const KeyManager &KM) {
-  int index = KeyIndex(key, KM);
-  PairCopy(PairPtrAt(index + 1), PairPtrAt(index), GetSize() - index);
+  int index = KeyIndex(key, KM);                                        // 计算插入位置
+  PairCopy(PairPtrAt(index + 1), PairPtrAt(index), GetSize() - index);  // 将插入位置之后所有键值对向后移一个位置
   SetKeyAt(index, key);
   SetValueAt(index, value);
   IncreaseSize(1);
@@ -127,6 +127,7 @@ int LeafPage::Insert(GenericKey *key, const RowId &value, const KeyManager &KM) 
 void LeafPage::MoveHalfTo(LeafPage *recipient) {
   int size = GetSize();
   int half_size = size / 2;
+  // 后半部分数据移动
   recipient->CopyNFrom(PairPtrAt(GetSize() - half_size), half_size);
   IncreaseSize(-half_size);
 }
@@ -148,7 +149,7 @@ void LeafPage::CopyNFrom(void *src, int size) {
  * If the key does not exist, then return false
  */
 bool LeafPage::Lookup(const GenericKey *key, RowId &value, const KeyManager &KM) {
-  int index = KeyIndex(key, KM);
+  int index = KeyIndex(key, KM);  // 计算键的索引
   if (index < GetSize() && KM.CompareKeys(key, KeyAt(index)) == 0) {
     value = ValueAt(index);
     return true;
@@ -168,9 +169,9 @@ bool LeafPage::Lookup(const GenericKey *key, RowId &value, const KeyManager &KM)
 int LeafPage::RemoveAndDeleteRecord(const GenericKey *key, const KeyManager &KM) {
   int index = KeyIndex(key, KM);
   if (index < GetSize() && KM.CompareKeys(key, KeyAt(index)) == 0) {
+    // 将当前记录后的所有记录向前移动
     PairCopy(PairPtrAt(index), PairPtrAt(index + 1), GetSize() - index - 1);
     IncreaseSize(-1);
-    return GetSize();
   }
   return GetSize();
 }
@@ -196,10 +197,11 @@ void LeafPage::MoveAllTo(LeafPage *recipient) {
  */
 void LeafPage::MoveFirstToEndOf(LeafPage *recipient) {
   if (GetSize() <= 0) {
-    std::cerr << "MoveFirstToEndOf error" << std::endl;
+    // std::cerr << "MoveFirstToEndOf error" << std::endl;
     return;
   }
   recipient->CopyLastFrom(KeyAt(0), ValueAt(0));
+  // 将当前记录后的所有记录向前移动
   PairCopy(PairPtrAt(0), PairPtrAt(1), GetSize() - 1);
   IncreaseSize(-1);
 }
@@ -218,7 +220,7 @@ void LeafPage::CopyLastFrom(GenericKey *key, const RowId value) {
  */
 void LeafPage::MoveLastToFrontOf(LeafPage *recipient) {
   if (GetSize() <= 0) {
-    std::cerr << "MoveLastToFrontOf error" << std::endl;
+    // std::cerr << "MoveLastToFrontOf error" << std::endl;
     return;
   }
   recipient->CopyFirstFrom(KeyAt(GetSize() - 1), ValueAt(GetSize() - 1));

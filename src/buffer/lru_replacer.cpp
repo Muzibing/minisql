@@ -65,7 +65,7 @@ void LRUReplacer::Unpin(frame_id_t frame_id) {
   }
   if (frame_isPin[frame_id])  // 不是空页，原先是Pin的页
   {
-    frame_isPin[frame_id] = false;
+    frame_isPin[frame_id] = false;  // 解除Pin
     number_unpined_frame++;
   }
 }

@@ -14,7 +14,7 @@ TableIterator::TableIterator(TableHeap *table_heap, RowId &rid, Txn *txn, Row *r
   this->txn = txn;
   this->rid = rid;
   if (row) {
-    this->row_ = new Row(*row);
+    this->row_ = new Row(*row);  // 深拷贝创建一个新对象
   } else {
     this->row_ = nullptr;
   }
@@ -67,18 +67,18 @@ TableIterator &TableIterator::operator++() {
     return *this;
   } else {  // 可能是最后一个row，需要读取下一页
     page_id_t next_page_id = INVALID_PAGE_ID;
-    while ((next_page_id = page->GetNextPageId()) != INVALID_PAGE_ID) {  // 获取下一页
+    while ((next_page_id = page->GetNextPageId()) != INVALID_PAGE_ID) {  // 获取下一页直到找到或没有更多页
       auto *next_page = reinterpret_cast<TablePage *>(table_heap_->buffer_pool_manager_->FetchPage(next_page_id));
       page = next_page;
       if (page->GetFirstTupleRid(&next_rid)) {  // 获取首个元组，失败则继续循环
-        row_->GetFields().clear();
+        row_->GetFields().clear();              // 预备装载新的元组信息
         rid = next_rid;
         row_->SetRowId(rid);
-        table_heap_->GetTuple(row_, nullptr);
+        table_heap_->GetTuple(row_, nullptr);  // 获取实际元组数据
         row_->SetRowId(rid);
         table_heap_->buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
         return *this;
-      }
+      }  // 继续迭代到下一页
       table_heap_->buffer_pool_manager_->UnpinPage(page->GetPageId(), false);
     }
     rid.Set(INVALID_PAGE_ID, 0);  // rid设置无效页
@@ -89,9 +89,10 @@ TableIterator &TableIterator::operator++() {
 
 // iter++
 TableIterator TableIterator::operator++(int) {
-  Row *row_next = new Row(*(this->row_));  // 获取信息以供返回
+  Row *row_next = new Row(*(this->row_));  // 深拷贝创建一个新的row对象
   TableHeap *heap_next = this->table_heap_;
   RowId rid_next = this->rid;
   ++(*this);
   return TableIterator(heap_next, rid_next, nullptr, row_next);
+  // 返回一个新的tableiterator对象
 }

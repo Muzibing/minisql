@@ -30,8 +30,8 @@ bool TableHeap::InsertTuple(Row &row, Txn *txn) {
         buffer_pool_manager_->UnpinPage(last_page_id_, false);  // 将之前的lastpage引用数减一，并不设置脏页
         buffer_pool_manager_->UnpinPage(next_page_id, true);  // 现在的lastpage引用数减一，并设置为脏页
         last_page_id_ = next_page_id;                         // 更新lastpageid
-        page_num++;
-      } else {  // 新建失败
+        page_num++;                                           // 增加页面数量
+      } else {                                                // 新建失败
         buffer_pool_manager_->UnpinPage(next_page_id, false);
         buffer_pool_manager_->UnpinPage(last_page_id_, false);
         return false;
@@ -48,7 +48,7 @@ bool TableHeap::InsertTuple(Row &row, Txn *txn) {
       page_num = 1;
       page_id_t page_id = GetFirstPageId();  // 获取首页id
       last_page_id_ = page_id;               // 更新lastpageid(首页是新建的所以首页就是尾页id)
-      while (1) {
+      while (1) {                            // 循环直到找到可以插入的数据页
         if (first_page->InsertTuple(row, schema_, txn, lock_manager_, log_manager_)) {  // 尝试将row插入当前页
           return buffer_pool_manager_->UnpinPage(page_id, true);
         } else {  // 失败则获取下一页
@@ -64,20 +64,21 @@ bool TableHeap::InsertTuple(Row &row, Txn *txn) {
               last_page_id_ = next_page_id;                              // 更新尾页
               new_page->Init(next_page_id, page_id, log_manager_, txn);  // 并初始化新页
               first_page->SetNextPageId(next_page_id);                   // 将其设置为上一页的下一页
-              buffer_pool_manager_->UnpinPage(page_id, false);           // 解引用
+              buffer_pool_manager_->UnpinPage(page_id, false);           // 取消pin上一页
               first_page = new_page;                                     // 更新page
               page_id = next_page_id;                                    // 更新page_id
             }
           } else {
-            // 若下一页有效，获得下一页并作为当前页，继续循环
+            // 若下一页有效，获得下一页并作为当前页，取消当前页pin，继续循环
             buffer_pool_manager_->UnpinPage(page_id, false);
             page_id = next_page_id;
             first_page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(next_page_id));
           }
         }
       }
+      std::cerr << "table_heap_insert" << std::endl;
       return false;
-    } else {
+    } else {  // 首页无效的情况
       buffer_pool_manager_->UnpinPage(first_page_id_, false);
       return false;
     }
@@ -105,14 +106,14 @@ bool TableHeap::MarkDelete(const RowId &rid, Txn *txn) {
 bool TableHeap::UpdateTuple(Row &row, const RowId &rid, Txn *txn) {
   auto page_id = rid.GetPageId();
   auto page = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(page_id));
-  if (page == nullptr) {
+  if (page == nullptr) {  // 如果页面不存在
     buffer_pool_manager_->UnpinPage(rid.GetPageId(), false);
     return false;
   }
-  Row old_row;            // 定义一个row
+  Row old_row;            // 定义一个旧元组row
   old_row.SetRowId(rid);  // 设置rowid
   int res = page->UpdateTuple(row, &old_row, schema_, txn, lock_manager_, log_manager_);
-  if (res) {
+  if (res) {  // 判断是否更新页面
     buffer_pool_manager_->UnpinPage(page_id, true);
     return true;
   } else {
@@ -161,6 +162,7 @@ bool TableHeap::GetTuple(Row *row, Txn *txn) {
     buffer_pool_manager_->UnpinPage(page_id, false);
     return false;
   }
+  // 尝试从页面中获取元组
   if (page->GetTuple(row, schema_, txn, lock_manager_)) {
     buffer_pool_manager_->UnpinPage(page_id, false);
     return true;

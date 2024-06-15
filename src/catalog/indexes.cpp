@@ -11,33 +11,34 @@ IndexMetadata *IndexMetadata::Create(const index_id_t index_id, const string &in
 }
 
 uint32_t IndexMetadata::SerializeTo(char *buf) const {
-  char *p = buf;
-  uint32_t ofs = GetSerializedSize();
-  ASSERT(ofs <= PAGE_SIZE, "Failed to serialize index info.");
+  /*content: MAGIC_NUM | index_id_ | index_name_ | table_id_ | key_map_ */
+  uint32_t offset = 0;
   // magic num
-  MACH_WRITE_UINT32(buf, INDEX_METADATA_MAGIC_NUM);
-  buf += 4;
-  // index id
-  MACH_WRITE_TO(index_id_t, buf, index_id_);
-  buf += 4;
-  // index name
-  MACH_WRITE_UINT32(buf, index_name_.length());
-  buf += 4;
-  MACH_WRITE_STRING(buf, index_name_);
-  buf += index_name_.length();
-  // table id
-  MACH_WRITE_TO(table_id_t, buf, table_id_);
-  buf += 4;
-  // key count
-  MACH_WRITE_UINT32(buf, key_map_.size());
-  buf += 4;
-  // key mapping in table
-  for (auto &col_index : key_map_) {
-    MACH_WRITE_UINT32(buf, col_index);
-    buf += 4;
+  MACH_WRITE_TO(uint32_t, buf, INDEX_METADATA_MAGIC_NUM);
+  offset = sizeof(INDEX_METADATA_MAGIC_NUM);
+  // index_id
+  MACH_WRITE_TO(uint32_t, buf + offset, index_id_);
+  offset += sizeof(index_id_);
+  // index_name_size
+  MACH_WRITE_TO(uint32_t, buf + offset, index_name_.size());
+  offset += sizeof(uint32_t);
+  // index_name
+  MACH_WRITE_STRING(buf + offset, index_name_);
+  offset += index_name_.size();
+  // table_id
+  MACH_WRITE_TO(uint32_t, buf + offset, table_id_);
+  offset += sizeof(table_id_);
+  // key_map_size
+  MACH_WRITE_TO(uint32_t, buf + offset, key_map_.size());
+  offset += sizeof(uint32_t);
+
+  // serialize key_map_
+  for (uint32_t i = 0; i < key_map_.size(); ++i) {
+    MACH_WRITE_TO(uint32_t, buf + offset, key_map_[i]);
+    offset += sizeof(uint32_t);
   }
-  ASSERT(buf - p == ofs, "Unexpected serialize size.");
-  return ofs;
+
+  return offset;
 }
 
 /**

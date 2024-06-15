@@ -16,7 +16,7 @@
 class ComparisonExpression : public AbstractExpression {
  public:
   /** Creates a new comparison expression representing (left comp_type right). */
-  ComparisonExpression(AbstractExpressionRef left, AbstractExpressionRef right, string comp_type)
+  ComparisonExpression(AbstractExpressionRef left, AbstractExpressionRef right, std::string comp_type)
       : AbstractExpression({std::move(left), std::move(right)}, TypeId::kTypeInt, ExpressionType::ComparisonExpression),
         comp_type_{std::move(comp_type)} {}
 

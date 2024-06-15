@@ -1,6 +1,7 @@
 #include "catalog/catalog.h"
 #include <asm-generic/errno.h>
 #include <sys/types.h>
+#include <cstddef>
 #include <cstdint>
 #include <mutex>
 #include <vector>
@@ -8,6 +9,7 @@
 #include "catalog/table.h"
 #include "common/config.h"
 #include "common/dberr.h"
+#include "glog/logging.h"
 #include "record/field.h"
 #include "storage/table_heap.h"
 
@@ -37,6 +39,7 @@ CatalogMeta *CatalogMeta::DeserializeFrom(char *buf) {
   // check valid
   uint32_t magic_num = MACH_READ_UINT32(buf);
   buf += 4;
+  LOG(INFO) << magic_num;
   ASSERT(magic_num == CATALOG_METADATA_MAGIC_NUM, "Failed to deserialize catalog metadata from disk.");
   // get table and index nums
   uint32_t table_nums = MACH_READ_UINT32(buf);
@@ -93,7 +96,7 @@ CatalogManager::CatalogManager(BufferPoolManager *buffer_pool_manager, LockManag
     for (auto iter : catalog_meta_->table_meta_pages_) {
       // 获取所有元信息的目录
       auto table_meta_page = buffer_pool_manager->FetchPage(iter.second);
-      TableMetadata *table_meta;
+      TableMetadata *table_meta = nullptr;
       TableMetadata::DeserializeFrom(table_meta_page->GetData(), table_meta);  // 反序列化表的元信息
       table_names_[table_meta->GetTableName()] = table_meta->GetTableId();     // 获取表名
       auto table_heap = TableHeap::Create(buffer_pool_manager, table_meta->GetFirstPageId(), table_meta->GetSchema(),

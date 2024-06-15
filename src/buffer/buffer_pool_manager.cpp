@@ -137,12 +137,9 @@ bool BufferPoolManager::DeletePage(page_id_t page_id) {
     pages_[frame_id].is_dirty_ = false;
     pages_[frame_id].pin_count_ = 0;
     pages_[frame_id].page_id_ = INVALID_PAGE_ID;
-    DeallocatePage(page_id);  // 从磁盘中释放该页
-    return true;
-  } else {
-    DeallocatePage(page_id);
-    return true;
   }
+  DeallocatePage(page_id);  // 无论在不在页面中都要从磁盘中释放该页
+  return true;
 }
 
 /**

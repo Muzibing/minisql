@@ -43,9 +43,8 @@ class CLOCKReplacer : public Replacer {
   void Reset(frame_id_t frame_id) override;
 
  private:
-  frame_id_t clock_hand_ = 0;
-  std::vector<std::tuple<bool, bool>> frames_;
-  std::shared_mutex mutex_;
+  frame_id_t clock_hand_;
+  std::vector<std::pair<bool, bool>> frames_;
 };
 
 #endif  // MINISQL_CLOCK_REPLACER_H
