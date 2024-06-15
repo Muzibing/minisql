@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <iomanip>
 
 #include "executor/execute_engine.h"
 #include "glog/logging.h"
@@ -19,16 +20,24 @@ void InitGoogleLog(char *argv) {
   // LOG(INFO) << "glog started!";
 }
 
-void InputCommand(char *input, const int len) {
+void InputCommand(char *input, const int len, ExecuteEngine *engine) {
   memset(input, 0, len);
   printf("minisql > ");
   int i = 0;
   char ch;
+
   while ((ch = getchar()) != ';') {
+    // 针对于执行文件sql语句的情况，如果到了文件末尾，关闭文件，同时重定向回标准输入
+    if (ch == EOF) {
+      fclose(stdin);
+      freopen("/dev/tty", "r", stdin);
+      cout << "minisql >";
+      continue;
+    }
     input[i++] = ch;
   }
-  input[i] = ch;  // ;
-  getchar();      // remove enter
+  input[i] = ch;
+  getchar();  // remove enter
 }
 
 int main(int argc, char **argv) {
@@ -44,7 +53,9 @@ int main(int argc, char **argv) {
 
   while (1) {
     // read from buffer
-    InputCommand(cmd, buf_size);
+
+    InputCommand(cmd, buf_size, &engine);
+    cout << cmd << endl;
     // create buffer for sql input
     YY_BUFFER_STATE bp = yy_scan_string(cmd);
     if (bp == nullptr) {
@@ -69,9 +80,7 @@ int main(int argc, char **argv) {
       SyntaxTreePrinter printer(MinisqlGetParserRootNode());
       printer.PrintTree(syntax_tree_file_mgr[syntax_tree_id++]);
     }
-
     auto result = engine.Execute(MinisqlGetParserRootNode());
-
     // clean memory after parse
     MinisqlParserFinish();
     yy_delete_buffer(bp);
