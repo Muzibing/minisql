@@ -113,13 +113,19 @@ bool TableHeap::UpdateTuple(Row &row, const RowId &rid, Txn *txn) {
   Row old_row;            // 定义一个旧元组row
   old_row.SetRowId(rid);  // 设置rowid
   int res = page->UpdateTuple(row, &old_row, schema_, txn, lock_manager_, log_manager_);
-  if (res) {  // 判断是否更新页面
+  if (res == 1)  // 返回1说明一切正常
+  {
     buffer_pool_manager_->UnpinPage(page_id, true);
     return true;
-  } else {
-    buffer_pool_manager_->UnpinPage(page_id, false);
-    return false;
+  } else if (res == -3)  // 返回-3，则表明剩余的空闲空间加上旧元组的大小小于新元组的序列化大小
+  {
+    ApplyDelete(rid, txn);                           // 可先删除旧元组
+    InsertTuple(row, txn);                           // 再将新元组进行插入
+    buffer_pool_manager_->UnpinPage(page_id, true);  // 脏页
+    return true;
   }
+  // 剩下情况都直接返回false
+  return false;
 }
 
 /**

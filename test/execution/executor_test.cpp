@@ -13,6 +13,7 @@ TEST_F(ExecutorTest, SimpleSeqScanTest) {
   // Construct query plan
   TableInfo *table_info;
   GetExecutorContext()->GetCatalog()->GetTable("table-1", table_info);
+  cout << "-1:okk" << endl;
   const Schema *schema = table_info->GetSchema();
   auto col_a = MakeColumnValueExpression(*schema, 0, "id");
   auto col_b = MakeColumnValueExpression(*schema, 0, "name");
@@ -21,10 +22,12 @@ TEST_F(ExecutorTest, SimpleSeqScanTest) {
   auto out_schema = MakeOutputSchema({{"id", col_a}, {"name", col_b}});
   auto plan = make_shared<SeqScanPlanNode>(out_schema, table_info->GetTableName(), predicate);
   // Execute
+  cout << "0:okk" << endl;
   std::vector<Row> result_set{};
   GetExecutionEngine()->ExecutePlan(plan, &result_set, GetTxn(), GetExecutorContext());
 
   // Verify
+  cout << "1:okk" << endl;
   ASSERT_EQ(result_set.size(), 500);
   for (const auto &row : result_set) {
     ASSERT_TRUE(row.GetField(0)->CompareLessThan(Field(kTypeInt, 500)));

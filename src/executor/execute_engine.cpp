@@ -40,11 +40,11 @@ ExecuteEngine::ExecuteEngine() {
   /** When you have completed all the code for
    *  the test, run it using main.cpp and uncomment
    *  this part of the code.**/
-  struct dirent *stdir;
+  /*struct dirent *stdir;
   while ((stdir = readdir(dir)) != nullptr) {
     if (strcmp(stdir->d_name, ".") == 0 || strcmp(stdir->d_name, "..") == 0 || stdir->d_name[0] == '.') continue;
     dbs_[stdir->d_name] = new DBStorageEngine(stdir->d_name, false);
-  }
+  }*/
   closedir(dir);
 }
 
@@ -379,6 +379,7 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
           length = 0;
         }
         Column *column = new Column(column_name, type, length, index++, true, unique);
+        column_list_vec.emplace_back(column);
       }
     } else if (past->type_ == kNodeColumnList) {
       auto key = past->child_;
